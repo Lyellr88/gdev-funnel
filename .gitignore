@@ -1,0 +1,9 @@
+# Written by the funnel at runtime.
+funnel-cache.json
+
+# Local overrides. These may contain the live editor token, so they stay out.
+funnel.config.local.json
+*.local.json
+.claude/settings.local.json
+
+node_modules/

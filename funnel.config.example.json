@@ -1,0 +1,7 @@
+{
+  "//": "One upstream, chosen by which key is present. This file is the http one.",
+
+  "url": "http://127.0.0.1:52520/mcp",
+  "settingsFile": "C:/Users/you/AppData/Roaming/GDevelop 5/mcp-live-server.json",
+  "token": "only if the token is not in that settings file"
+}
