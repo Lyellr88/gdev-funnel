@@ -25,34 +25,50 @@ const readline = require('readline');
 
 const { createMockApi } = require('./mock-gdevelop-api');
 
-// The real function schemas live in the GDevelop source tree. The funnel
-// itself does not need it: only this test does, to measure what the editor
-// publishes. Set GDEVELOP_SOURCE_DIR if the folder was moved somewhere else.
+// The schemas this test measures against. `fixtures/public-api-v22` holds a
+// trimmed copy of the two files the editor ships, so a plain checkout runs the
+// suite with no GDevelop install and no source tree.
+//
+// A GDevelop source tree is used instead when one is found: GDEVELOP_SOURCE_DIR
+// if it is set, then a `GDevelop-master` folder next to this one. That measures
+// the real files, which is what the numbers in README.md come from.
 const API_SUBDIR = 'newIDE/app/src/EditorFunctions/PublicApi/v22';
-const findSourceTree = () => {
-  const candidates = [
-    process.env.GDEVELOP_SOURCE_DIR,
+const FIXTURE_DIR = path.join(__dirname, 'fixtures', 'public-api-v22');
+
+const hasSchemas = (dir) => fs.existsSync(path.join(dir, 'functions.json'));
+
+const findSchemas = () => {
+  if (process.env.GDEVELOP_SOURCE_DIR) {
+    const dir = path.join(process.env.GDEVELOP_SOURCE_DIR, API_SUBDIR);
+    if (!hasSchemas(dir)) {
+      console.error(
+        `GDEVELOP_SOURCE_DIR is set but ${path.join(dir, 'functions.json')} does not exist.`
+      );
+      process.exit(2);
+    }
+    return { dir, label: `GDevelop source tree (${process.env.GDEVELOP_SOURCE_DIR})` };
+  }
+  const neighbours = [
     path.join(__dirname, '..', 'GDevelop-master'),
     path.join(__dirname, '..', 'GDevelop-master', 'GDevelop-master'),
-    path.join(__dirname, '..'),
-  ].filter(Boolean);
-  return (
-    candidates.find((base) =>
-      fs.existsSync(path.join(base, API_SUBDIR, 'functions.json'))
-    ) || null
-  );
-};
-
-const sourceRoot = findSourceTree();
-if (!sourceRoot) {
+  ];
+  for (const base of neighbours) {
+    const dir = path.join(base, API_SUBDIR);
+    if (hasSchemas(dir)) return { dir, label: `GDevelop source tree (${base})` };
+  }
+  if (hasSchemas(FIXTURE_DIR)) {
+    return { dir: FIXTURE_DIR, label: 'the bundled fixture' };
+  }
   console.error(
-    `Cannot find the GDevelop source tree (${API_SUBDIR}/functions.json).\nSet GDEVELOP_SOURCE_DIR to the root of a GDevelop checkout, or run this test from next to one.`
+    `Cannot find functions.json in ${FIXTURE_DIR} or next to a GDevelop source tree.`
   );
   process.exit(2);
-}
-console.log(`GDevelop source: ${sourceRoot}\n`);
-const functionsPath = path.join(sourceRoot, API_SUBDIR, 'functions.json');
-const scriptApiPath = path.join(sourceRoot, API_SUBDIR, 'script-api.d.ts');
+};
+
+const schemas = findSchemas();
+console.log(`schemas: ${schemas.label}\n`);
+const functionsPath = path.join(schemas.dir, 'functions.json');
+const scriptApiPath = path.join(schemas.dir, 'script-api.d.ts');
 
 const api = createMockApi({ functionsPath, scriptApiPath });
 const approxTokens = (text) => Math.round(text.length / 4);

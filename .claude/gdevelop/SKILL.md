@@ -12,13 +12,13 @@ description: How to work on the game through the slim GDevelop funnel (5 tools o
 - `read_game_project_json`, `save_project` and `create_project` are their own tools.
 - Never call a GDevelop function name as a tool. `put_3d_instances` is `gdevelop({function_name: "put_3d_instances", arguments})`.
 - Extension docs: `docs({what: "extension", names: ["Sprite", "Physics3D"]})`. The funnel turns the list into the comma-separated string GDevelop expects, so `gdevelop({function_name: "read_full_docs", arguments: {extension_names: "Sprite, Physics3D"}})` is the same read.
-- `list_game_templates` is a `gdevelop` function and `create_project` is a tool. Both are unused: this project already exists.
+- `list_game_templates` is a `gdevelop` function and `create_project` is a tool. Both create a project: skip them while working in an existing one.
 
 ## `scope`, exactly
 
 Never a string, always an object with `type`:
 
-- Scene (instances, events, scene properties): `{type: "scene", scene_name: "Game Scene"}`
+- Scene (instances, events, scene properties): `{type: "scene", scene_name: "<scene name>"}`
 - External layout: `{type: "external_layout", external_layout_name: "<name>"}`
 - Custom object variant: `{type: "custom_object_variant", extension_name, custom_object_name, variant_name: ""}`
 - A function's events (`generate_events`, `read_events_source`): `extension`, `custom_behavior` or `custom_object` type with `function_name`
@@ -26,7 +26,7 @@ Never a string, always an object with `type`:
 
 ## Function sheet
 
-Required arguments first, `?` is optional. `…` marks a signature I shortened: `docs({what: "schema", name})` is the truth.
+Required arguments first, `?` is optional. `…` marks a signature shortened here: `docs({what: "schema", name})` is the truth.
 
 - Objects: `create_or_replace_object(scope, object_type, object_name, replace_existing_object?, duplicated_object_name?, asset_id?, search_terms?, …)`, `inspect_object_properties_effects(scope, object_name)`, `change_object_properties_effects(scope, object_name, delete_this_object?, changed_properties?, changed_effects?, raw_json?, renamed_animations?, renamed_points?)`.
 - Behaviors: `add_behavior(scope, object_name, behavior_type)`, `inspect_behavior_properties(scope, object_name, behavior_name)`, `change_behavior_property(scope, object_name, behavior_name, delete_this_behavior?, changed_properties?)`.
@@ -40,10 +40,10 @@ Required arguments first, `?` is optional. `…` marks a signature I shortened: 
 
 ## Recipes
 
-- Before any edit: read first (`read_game_project_json`, `describe_instances`, `inspect_object_properties_effects`). Object names are exact (`cabin` is lowercase, the truck is `pickup_truck`, the scene is "Game Scene").
-- Back up `game-jam-01.json` to `D:/game-jam-01-scratch/backups/` before a big pass, and before the `save_project` that makes it permanent. Call `save_project` after each coherent change.
-- New object from a file we own: the editor cannot register it. Follow `.claude/rules/gdevelop-mcp.md` (close the editor, register, reopen). The funnel outlives the editor: a call made while GDevelop is shut returns "GDevelop is not reachable at http://127.0.0.1:52520/mcp" and the next call after reopening reconnects by itself. No MCP restart.
-- New stock object: `create_or_replace_object`. Afterwards run `inspect_project_properties_resources` with `list_all_resources`, delete the stray resources and move their files with `D:/game-jam-01-scratch/tools/cleanup-assets.py`.
+- Before any edit: read first (`read_game_project_json`, `describe_instances`, `inspect_object_properties_effects`). Object, scene, layer and resource names are exact, including case: take them from what was read, never from memory.
+- Back up the project file before a big pass, and before the `save_project` that makes it permanent. Call `save_project` after each coherent change.
+- A new object built from a file the project owns cannot be registered by an editor function: close the editor, register the asset in the editor's resource manager, then reopen. The funnel outlives the editor: a call made while GDevelop is shut returns "GDevelop is not reachable at http://127.0.0.1:52520/mcp" and the next call after reopening reconnects by itself. No MCP restart.
+- New stock object: `create_or_replace_object`. Afterwards run `inspect_project_properties_resources` with `list_all_resources` and delete the resources that nothing uses, moving their files by hand.
 - Change a property: `change_object_properties_effects` takes `changed_properties: [{property_name, new_value}]` — both keys required, and `new_value` is always a string, even for numbers and booleans (`"100"`, `"true"`).
 - Terrain and scattered-model `Edits` are one JSON string: read it, append, write it back, never replace.
 - Place new things (`put_3d_instances`): `brush_position_anchor` `bottom_center` for people and props, `min_corner` for Cube3D, `drop_to_surface` to rest on the ground. About 40 px per metre. `brush_kind` is required: `point`, `line`, `random_in_sphere`, `erase` or `none`. 3D `instances_size` is a string of three comma-separated numbers (`"100,200,150"`).
@@ -62,7 +62,7 @@ Required arguments first, `?` is optional. `…` marks a signature I shortened: 
   - for a small change inside a long event, `edits: [{old_string, new_string, replace_all?}]` instead of `event_script`.
 
   At most 6 `event_batches` per call.
-- Test: `run_gameplay_test` with `scope: {type: "project"}`, `test_name`, `source`, `persist: false` (otherwise it overwrites the stored test). Two screenshots at most, small width. Ask Ryan to confirm anything visual.
+- Test: `run_gameplay_test` with `scope: {type: "project"}`, `test_name`, `source`, `persist: false` (otherwise it overwrites the stored test). Two screenshots at most, small width. A screenshot is evidence for the user to judge, not for you: ask before trusting anything visual.
 - `run_script` is the last resort, not a batching default: it needs `docs({what: "script_api"})` first, which is the largest doc there is (about 135 KB) and is charged on every request afterwards. The funnel already made single named calls cheap, so batch only when you need a loop or a branch, or when the steps depend on each other and five or more calls would otherwise be needed. A script stops at the first failed call with no rollback: everything before it stays applied.
 
 ## When a call fails
@@ -70,4 +70,4 @@ Required arguments first, `?` is optional. `…` marks a signature I shortened: 
 - Read the error. Fetch `docs({what: "schema", name})` for that function once, fix the arguments, call again.
 - Never retry the same arguments. Never guess object names, resource names or extension names: read them.
 - An `expected_event_source` mismatch is not a bug in the call shape: re-read the event and redo the edit against what it returned.
-- Two failures in a row: stop and tell Ryan what failed and what was tried.
+- Two failures in a row: stop and tell the user what failed and what was tried.

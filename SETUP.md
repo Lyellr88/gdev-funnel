@@ -25,7 +25,7 @@ Cuts each GDevelop MCP request from about 42k tokens to about 2.7k. Full details
 
 3. Turn off the old GDevelop server. In Claude Code type `/mcp`, pick `gdevelop` (the old one) and disable it. If it stays on, you still pay for all 40 tools on every call.
 4. Open GDevelop with the project. In GDevelop, open Preferences and switch on the MCP server.
-5. Copy `.claude/gdevelop/SKILL.md` from this folder to `.claude/skills/gdevelop/SKILL.md` in the project. It teaches Claude how to use the 4 tools.
+5. Copy `.claude/gdevelop/SKILL.md` from this folder to `.claude/skills/gdevelop/SKILL.md` in the project. It teaches Claude how to use the 5 tools.
 6. Restart Claude Code in the project folder. Approve `gdevelop-funnel` when it asks.
 
 ## Check that it works

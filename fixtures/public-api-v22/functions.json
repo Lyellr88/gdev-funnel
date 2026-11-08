@@ -1,0 +1,1384 @@
+{
+  "toolsVersion": "v22",
+  "functions": [
+    {
+      "name": "create_or_replace_object",
+      "description": "Creates a new object of a specified type, or replace an existing one, or duplicate an existing one.\n Either `search_terms` can be provided to search for a matching asset in the asset store, or `asset_id` can be provided to directly pick a specific asset for which you already know the ID.\n No instances is added on the scene for the object. If needed, instances must be placed on the scene after the object is created.\n Inside a custom object (a `scope` of type `custom_object_variant`, with `variant_name` \"\" - child objects are only added on the default variant), the object is created as a child object of the custom object, and a child object can never be named `Object` (this name is reserved for the custom object itself).\n Safe to re-run: if an object with the same name and type already exists and `replace_existing_object` is not set, nothing is changed and the call still succeeds.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "scope": {
+            "type": "object",
+            "description": "Where the object is created, replaced or duplicated. Set `type` and the name field(s) of that type.",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "scene",
+                  "custom_object_variant"
+                ],
+                "description": "`scene`: a scene (`scene_name`). `custom_object_variant`: the child objects, instances and layers of a variant of a custom object (`extension_name` + `custom_object_name` + `variant_name`, `\"\"` being the default variant that named variants inherit from)."
+              },
+              "scene_name": {
+                "type": "string",
+                "description": "The name of the scene (type `scene`)."
+              },
+              "extension_name": {
+                "type": "string",
+                "description": "The name of the extension (extension, custom_behavior, custom_object and custom_object_variant types)."
+              },
+              "custom_object_name": {
+                "type": "string",
+                "description": "The name of the custom object in the extension (custom_object and custom_object_variant types)."
+              },
+              "variant_name": {
+                "type": "string",
+                "description": "The name of the variant of the custom object (type `custom_object_variant`); \"\" is the default variant."
+              }
+            },
+            "required": [
+              "type"
+            ],
+            "propertyOrdering": [
+              "type",
+              "scene_name",
+              "extension_name",
+              "custom_object_name",
+              "variant_name"
+            ]
+          },
+          "target_object_scope": {
+            "type": "string",
+            "enum": [
+              "scene",
+              "global"
+            ],
+            "description": "The scope in which the new object will be, whether it has been created, duplicated or replaced. If set to `scene`, the object will be created in the list of objects of the scene given by `scope`. If set to `global`, the object will be created in the list of global objects. Only valid with a `scope` of type `scene`: in a custom object, the object is always a child object."
+          },
+          "object_type": {
+            "type": "string",
+            "description": "The type of the object to create, found in the reference (e.g., `Sprite`, `TiledSpriteObject::TiledSprite`, `TextObject::Text`, `PanelSpriteObject::PanelSprite`, `PrimitiveDrawing::Drawer`, `ParticleSystem::ParticleEmitter`, `Scene3D::Model3DObject`, etc...). For an existing object, enter the exact type of the existing object."
+          },
+          "object_name": {
+            "type": "string",
+            "description": "The unique name to assign to the new object, or the name of the existing object to replace (in this case, `replace_existing_object` must be set to true)."
+          },
+          "replace_existing_object": {
+            "type": "boolean",
+            "description": "If set to true, the existing object with the same name will be replaced by the new one found in the asset store. If not set to true, an existing object with the same name (and type) is kept unchanged and the call succeeds without doing anything."
+          },
+          "duplicated_object_name": {
+            "type": "string",
+            "description": "If set, the existing object with this name will be duplicated to create the new object. This is useful when you want to create a new object based on an existing one, but with a different name. The `object_type` must match the type of the existing object. If the existing object does not exist, this will throw an error."
+          },
+          "duplicated_object_scope": {
+            "type": "object",
+            "description": "Where the object to duplicate lives. Only used if `duplicated_object_name` is set (it defaults to `scope`). Set `type` and the name field(s) of that type.",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "scene",
+                  "custom_object_variant"
+                ],
+                "description": "`scene`: a scene (`scene_name`). `custom_object_variant`: the child objects, instances and layers of a variant of a custom object (`extension_name` + `custom_object_name` + `variant_name`, `\"\"` being the default variant that named variants inherit from)."
+              },
+              "scene_name": {
+                "type": "string",
+                "description": "The name of the scene (type `scene`)."
+              },
+              "extension_name": {
+                "type": "string",
+                "description": "The name of the extension (extension, custom_behavior, custom_object and custom_object_variant types)."
+              },
+              "custom_object_name": {
+                "type": "string",
+                "description": "The name of the custom object in the extension (custom_object and custom_object_variant types)."
+              },
+              "variant_name": {
+                "type": "string",
+                "description": "The name of the variant of the custom object (type `custom_object_variant`); \"\" is the default variant."
+              }
+            },
+            "required": [
+              "type"
+            ],
+            "propertyOrdering": [
+              "type",
+              "scene_name",
+              "extension_name",
+              "custom_object_name",
+              "variant_name"
+            ]
+          },
+          "asset_id": {
+            "type": "string",
+            "description": "If specified, the asset with this specific ID will be created (search_terms will be ignored). Must be the hexadecimal asset ID alone (e.g. `31b04c0eea`) - never an asset name or a project resource filename. To change a resource used by an existing object, do not use this: set the object resource property with `change_object_properties_effects`. A skybox is not an object: it goes on a 3D layer, with the `asset_id` of a `changed_layer_effects` item of `change_scene_properties_layers_effects_groups`."
+          },
+          "search_terms": {
+            "type": "string",
+            "description": "A list of search terms or tags that will be used to find an asset in GDevelop Asset Store. Must be single words separated by a comma, the most generic word must be first. For example: `spaceship, red, insurgent, cannon`. If you duplicate or move an existing object, or if `asset_id` is provided, you can leave this empty."
+          },
+          "description": {
+            "type": "string",
+            "description": "Optional short description of the object, potentially used to find a suitable asset in the asset store (e.g., 'a red sports car', 'a wooden treasure chest'). It will be stored in the object metadata for future reference."
+          },
+          "two_dimensional_view_kind": {
+            "type": "string",
+            "enum": [
+              "top-down",
+              "side-view"
+            ],
+            "description": "For 2D objects where it makes sense (i.e: not for 3D objects, not for UI elements...), the kind of view it will have in the game. Can be `top-down` or `side-view`."
+          }
+        },
+        "required": [
+          "scope",
+          "object_type",
+          "object_name"
+        ]
+      }
+    },
+    {
+      "name": "inspect_object_properties_effects",
+      "description": "Retrieves the list of properties, effects and their current values for a specific object.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "scope": {
+            "type": "object",
+            "description": "Where the object lives (a scene, or a variant of a custom object for one of its child objects). Set `type` and the name field(s) of that type.",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "scene",
+                  "custom_object_variant"
+                ],
+                "description": "`scene`: a scene (`scene_name`). `custom_object_variant`: the child objects, instances and layers of a variant of a custom object (`extension_name` + `custom_object_name` + `variant_name`, `\"\"` being the default variant that named variants inherit from)."
+              },
+              "scene_name": {
+                "type": "string",
+                "description": "The name of the scene (type `scene`)."
+              },
+              "extension_name": {
+                "type": "string",
+                "description": "The name of the extension (extension, custom_behavior, custom_object and custom_object_variant types)."
+              },
+              "custom_object_name": {
+                "type": "string",
+                "description": "The name of the custom object in the extension (custom_object and custom_object_variant types)."
+              },
+              "variant_name": {
+                "type": "string",
+                "description": "The name of the variant of the custom object (type `custom_object_variant`); \"\" is the default variant."
+              }
+            },
+            "required": [
+              "type"
+            ],
+            "propertyOrdering": [
+              "type",
+              "scene_name",
+              "extension_name",
+              "custom_object_name",
+              "variant_name"
+            ]
+          },
+          "object_name": {
+            "type": "string",
+            "description": "The name of the object to inspect."
+          },
+          "include_raw_json": {
+            "type": "boolean",
+            "description": "Rarely needed: also returns `rawJson`, the full configuration, for what `properties` don't expose (animations, points, collision masks, tile map settings...)."
+          }
+        },
+        "required": [
+          "scope",
+          "object_name"
+        ]
+      }
+    },
+    {
+      "name": "change_object_properties_effects",
+      "description": "Modifies the value of one or more specific properties for an object, and/or adds, removes or changes its effects. It can also be used to rename an object. \nIf needed, use `inspect_object_properties_effects` to inspect available properties and effects of an object.\nChanges the shared object, not a placed instance: instance position, size, rotation, opacity and visibility are set via `put_2d_instances`/`put_3d_instances` (no `x`/`y`/`z` or `visible` object property. A resource property takes the name of a resource of the project: a file attached by the user must first be added with `change_project_properties_resources`; a texture/3D model from the asset store is imported via `create_or_replace_object`.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "scope": {
+            "type": "object",
+            "description": "Where the object lives (a scene, or a variant of a custom object for one of its child objects). Set `type` and the name field(s) of that type.",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "scene",
+                  "custom_object_variant"
+                ],
+                "description": "`scene`: a scene (`scene_name`). `custom_object_variant`: the child objects, instances and layers of a variant of a custom object (`extension_name` + `custom_object_name` + `variant_name`, `\"\"` being the default variant that named variants inherit from)."
+              },
+              "scene_name": {
+                "type": "string",
+                "description": "The name of the scene (type `scene`)."
+              },
+              "extension_name": {
+                "type": "string",
+                "description": "The name of the extension (extension, custom_behavior, custom_object and custom_object_variant types)."
+              },
+              "custom_object_name": {
+                "type": "string",
+                "description": "The name of the custom object in the extension (custom_object and custom_object_variant types)."
+              },
+              "variant_name": {
+                "type": "string",
+                "description": "The name of the variant of the custom object (type `custom_object_variant`); \"\" is the default variant."
+              }
+            },
+            "required": [
+              "type"
+            ],
+            "propertyOrdering": [
+              "type",
+              "scene_name",
+              "extension_name",
+              "custom_object_name",
+              "variant_name"
+            ]
+          },
+          "object_name": {
+            "type": "string",
+            "description": "The name of the object whose property needs changing."
+          },
+          "delete_this_object": {
+            "type": "boolean",
+            "description": "Optional boolean. If true, the object with this name will be deleted, along with all of its placed instances (in every scene using it, if it is a global object) and its membership in any group. No other property needs to be set in this case. This does not work for groups: to delete a group, use `change_scene_properties_layers_effects_groups` instead. Destructive: only set this when the user has explicitly and unambiguously asked to delete this object. Never set it on your own initiative, for example as an attempt to fix an issue."
+          },
+          "changed_properties": {
+            "type": "array",
+            "description": "A list of object properties to change.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "property_name": {
+                  "type": "string",
+                  "description": "The exact name of the property to change (e.g., 'text', 'color', 'characterSize'...). If you want to rename the object, the property must be `name`."
+                },
+                "new_value": {
+                  "type": "string",
+                  "description": "The new value for the property. Should be provided as a string, even if the underlying type is number or boolean (e.g., '100', 'true', 'Hello World'...)."
+                }
+              },
+              "required": [
+                "property_name",
+                "new_value"
+              ],
+              "propertyOrdering": [
+                "property_name",
+                "new_value"
+              ]
+            }
+          },
+          "changed_effects": {
+            "type": "array",
+            "description": "A list of effects to add, remove or change (update their properties) for this object. Only objects whose type supports effects can have one (check with `inspect_object_properties_effects`).",
+            "items": {
+              "type": "object",
+              "properties": {
+                "effect_name": {
+                  "type": "string",
+                  "description": "The name of the effect to change (or add, it will be added if it does not exist. In this case, `effect_type` must be set)."
+                },
+                "new_effect_name": {
+                  "type": "string",
+                  "description": "If renaming an effect, the new name of the effect. Unchanged if not set."
+                },
+                "effect_type": {
+                  "type": "string",
+                  "description": "The type of the effect, only when adding a new effect. Must be the exact type of the effect, as listed in the GDevelop documentation. For example: `AdvancedBloom`, `KawaseBlur`... Some effects (mostly Scene3D lighting/post-processing effects like `Exposure`, `Bloom`, `Skybox`) only work on layers, not objects."
+                },
+                "new_effect_position": {
+                  "type": "number",
+                  "description": "The new position of the effect in the order of effects. 0 is the first applied effect."
+                },
+                "delete_this_effect": {
+                  "type": "boolean",
+                  "description": "If true, the effect with this name will be deleted."
+                },
+                "changed_properties": {
+                  "type": "array",
+                  "description": "New values to set for the effect. Available properties can be inspected using `inspect_object_properties_effects` tool for existing or newly added effects.",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "property_name": {
+                        "type": "string"
+                      },
+                      "new_value": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "property_name",
+                      "new_value"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "effect_name"
+              ]
+            }
+          },
+          "raw_json": {
+            "type": "string",
+            "description": "Advanced, alone in its call: the complete edited `rawJson`, as a JSON string. Animations and points are matched by name: rename them with `renamed_animations`/`renamed_points`, not here."
+          },
+          "renamed_animations": {
+            "type": "array",
+            "description": "Updates the events (when the old name is unique; not events on object groups). Only `renamed_points` can be in the same call.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "old_name": {
+                  "type": "string"
+                },
+                "new_name": {
+                  "type": "string"
+                },
+                "index": {
+                  "type": "number",
+                  "description": "Index of the animation, when `old_name` is empty or shared."
+                }
+              },
+              "required": [
+                "old_name",
+                "new_name"
+              ]
+            }
+          },
+          "renamed_points": {
+            "type": "array",
+            "description": "Renames the point in every frame; updates the events (not events on object groups).",
+            "items": {
+              "type": "object",
+              "properties": {
+                "old_name": {
+                  "type": "string"
+                },
+                "new_name": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "old_name",
+                "new_name"
+              ]
+            }
+          }
+        },
+        "required": [
+          "scope",
+          "object_name"
+        ],
+        "propertyOrdering": [
+          "scope",
+          "object_name",
+          "delete_this_object",
+          "changed_properties",
+          "changed_effects",
+          "raw_json",
+          "renamed_animations",
+          "renamed_points"
+        ]
+      }
+    },
+    {
+      "name": "describe_instances",
+      "description": "Lists all object instances currently placed in the given scope (a scene, an external layout or a variant of a custom object), including their identifier, type, object name, layer, visibility, position and size. The position of an instance is its origin point — usually its top-left corner in 2D, or its corner with minimum X, Y and Z in 3D — NOT its center. Some objects have a different origin point: check `objectSizeInfo` in the results.\nEach instance also reports its per-instance variables (`initialVariables`, present only when the instance overrides the object variables — absent means the instance uses the object variables).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "scope": {
+            "type": "object",
+            "description": "Where the instances are placed. In a custom object variant, the positions are in the local space of the custom object. Set `type` and the name field(s) of that type.",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "scene",
+                  "external_layout",
+                  "custom_object_variant"
+                ],
+                "description": "`scene`: a scene (`scene_name`). `external_layout`: the instances of an external layout (`external_layout_name`), with the objects and layers of its associated scene. `custom_object_variant`: the child objects, instances and layers of a variant of a custom object (`extension_name` + `custom_object_name` + `variant_name`, `\"\"` being the default variant that named variants inherit from)."
+              },
+              "scene_name": {
+                "type": "string",
+                "description": "The name of the scene (type `scene`)."
+              },
+              "external_layout_name": {
+                "type": "string",
+                "description": "The name of the external layout (type `external_layout`)."
+              },
+              "extension_name": {
+                "type": "string",
+                "description": "The name of the extension (extension, custom_behavior, custom_object and custom_object_variant types)."
+              },
+              "custom_object_name": {
+                "type": "string",
+                "description": "The name of the custom object in the extension (custom_object and custom_object_variant types)."
+              },
+              "variant_name": {
+                "type": "string",
+                "description": "The name of the variant of the custom object (type `custom_object_variant`); \"\" is the default variant."
+              }
+            },
+            "required": [
+              "type"
+            ],
+            "propertyOrdering": [
+              "type",
+              "scene_name",
+              "external_layout_name",
+              "extension_name",
+              "custom_object_name",
+              "variant_name"
+            ]
+          },
+          "filter_by_object_name": {
+            "type": "string",
+            "description": "Optional name(s) of the object(s), separated by a comma, to filter the instances by. If not set, all instances will be described."
+          },
+          "include_raw_json": {
+            "type": "boolean",
+            "description": "Rarely needed: also returns the `rawJson` of each instance (starting animation, tile map tiles, text input values, flips)."
+          },
+          "surface_beneath": {
+            "type": "object",
+            "description": "Optional. Also reports, for each listed instance, the surface below it as shown in the scene editor (the scene, or the custom object variant, is opened in the editor for this). `surfaceBeneath` is the first surface found below the top of its box, the instance itself ignored: its Z (or Y with `up: \"-y\"`, and always for 2D instances, seen from the side), the object and the id of the instance it belongs to, and `gap` (positive: the instance floats above it, negative: it sinks into it), or null when there is none. Use it to check that instances stand on the ground, or to find the height of a terrain.",
+            "properties": {
+              "up": {
+                "type": "string",
+                "enum": [
+                  "z",
+                  "-y"
+                ],
+                "description": "The up direction: `z` (the default, most 3D games) or `-y` (side view games: instances fall toward +Y, and the bottom of their box is its maximum Y)."
+              },
+              "include_objects": {
+                "type": "string",
+                "description": "Optional names of objects or groups, separated by commas: the only ones to land on."
+              },
+              "exclude_objects": {
+                "type": "string",
+                "description": "Optional names of objects or groups, separated by commas, to fall through (example: water, grass, decorations)."
+              },
+              "grid": {
+                "type": "number",
+                "description": "Optional, from 2 to 32: also reports `surfaceGrid`, the heights of the surfaces inside the box of each instance (the instance included: a terrain gives its relief), on this many points per side, with the highest and the lowest. With `up: \"-y\"`, the heights are along X only (a side view). Use it with `filter_by_object_name` to describe a few instances."
+              }
+            }
+          }
+        },
+        "required": [
+          "scope"
+        ]
+      }
+    },
+    {
+      "name": "put_2d_instances",
+      "description": "Places new instance(s), or move/erase existing instances, of an existing object onto a specified 2D layer of the given scope (a scene, an external layout or a variant of a custom object) using a virtual brush at given X, Y coordinates. Can also be used to resize, rotate, change opacity, visibility, layer or Z order of existing 2D instance(s). Existing instances identifiers can be found by calling `describe_instances` (`id` field for each instance).\nTo delete instances, use `brush_kind: \"erase\"` with `existing_instance_ids`, or with only `object_name` to erase every instance of it on `layer_name` (no separate remove tool exists). To move existing instances, use the `point` brush with `existing_instance_ids` (the `none` brush never changes position). An instance position, size, rotation, opacity and visibility are set here, not via `change_object_property`.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "scope": {
+            "type": "object",
+            "description": "Where the instances are placed. In a custom object variant, the positions are in the local space of the custom object. Set `type` and the name field(s) of that type.",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "scene",
+                  "external_layout",
+                  "custom_object_variant"
+                ],
+                "description": "`scene`: a scene (`scene_name`). `external_layout`: the instances of an external layout (`external_layout_name`), with the objects and layers of its associated scene. `custom_object_variant`: the child objects, instances and layers of a variant of a custom object (`extension_name` + `custom_object_name` + `variant_name`, `\"\"` being the default variant that named variants inherit from)."
+              },
+              "scene_name": {
+                "type": "string",
+                "description": "The name of the scene (type `scene`)."
+              },
+              "external_layout_name": {
+                "type": "string",
+                "description": "The name of the external layout (type `external_layout`)."
+              },
+              "extension_name": {
+                "type": "string",
+                "description": "The name of the extension (extension, custom_behavior, custom_object and custom_object_variant types)."
+              },
+              "custom_object_name": {
+                "type": "string",
+                "description": "The name of the custom object in the extension (custom_object and custom_object_variant types)."
+              },
+              "variant_name": {
+                "type": "string",
+                "description": "The name of the variant of the custom object (type `custom_object_variant`); \"\" is the default variant."
+              }
+            },
+            "required": [
+              "type"
+            ],
+            "propertyOrdering": [
+              "type",
+              "scene_name",
+              "external_layout_name",
+              "extension_name",
+              "custom_object_name",
+              "variant_name"
+            ]
+          },
+          "object_name": {
+            "type": "string",
+            "description": "The name of the object to create (or manipulate) instances of. Always required unless you specify `existing_instance_ids`."
+          },
+          "layer_name": {
+            "type": "string",
+            "description": "The name of the layer to place (or move) the instance on. Use an empty string \"\" for the default base layer. For existing instances (`existing_instance_ids`), they will be moved to this layer."
+          },
+          "brush_kind": {
+            "type": "string",
+            "enum": [
+              "point",
+              "line",
+              "grid",
+              "random_in_circle",
+              "erase",
+              "none"
+            ],
+            "description": "The kind of brush to use. Can be `point` (one instance at the exact position), `line` (multiple instances distributed along a line), `grid` (multiple instances distributed in a grid), `random_in_circle` (multiple instances randomly scattered in a circle), `erase` (remove either instances in a circle around the brush, or the instances given by their identifiers) or `none` (only modifies the existing instances given by `existing_instance_ids`, or without them every instance of `object_name` on `layer_name`, without moving them — never creates instances)."
+          },
+          "brush_position": {
+            "type": "string",
+            "description": "The X and Y coordinates of the center of the brush, in pixels, separated by a comma. Example: 100,200. Must be omitted for the `none` brush (which never moves instances — passing a position with it is an error); can be omitted for `erase` when specifying `existing_instance_ids`. If using `line` or `grid` brush, this is the start position and you must also specify the `brush_end_position`. Note: each instance is placed by its ORIGIN, which is the top-left corner of its box only when the object has no origin point of its own (a sprite or a custom object can have one anywhere). Never compute a position from a size alone: place the instances by their box with `brush_position_anchor`, or read the offsets of the origin in `objectSizeInfo` (in tool results)."
+          },
+          "brush_position_anchor": {
+            "type": "string",
+            "enum": [
+              "origin",
+              "min_corner",
+              "center"
+            ],
+            "description": "Optional. Which point of the instances the brush positions: `origin` (the default: their x;y, wherever the origin of the object is), `min_corner` (the top-left corner of their box) or `center` (the middle of their box). Use it instead of computing a position from a size: it needs nothing to be known of the origin of the object, and two objects centered on each other take the same position. The box is the unrotated, unflipped one, at the size these instances have. Refused when the size or the origin of the object is unknown."
+          },
+          "brush_size": {
+            "type": "number",
+            "description": "The radius of the brush, for `random_in_circle` or `erase` brush kind."
+          },
+          "brush_end_position": {
+            "type": "string",
+            "description": "The X and Y coordinates of the end position of the brush, separated by a comma. Only used for `line` and `grid` brush. Example: 400,650."
+          },
+          "existing_instance_ids": {
+            "type": "string",
+            "description": "The optional identifiers of existing instances to modify — get them from `describe_instances` (the `id` field of each instance). They must be instances of `object_name`. These instances are moved by a placement brush (`point`, `line`, `grid` or `random_in_circle` — `point` moves EVERY listed instance to exactly `brush_position`, so use one call per target position), updated in place without moving (`none`: size, rotation, opacity, z-order and layer only — never position), or removed (`erase`), separated by a comma (example: `a213v-cdef,b193v-98a1,3334873`). This can be combined with `new_instances_count`. Without `existing_instance_ids` (and without `brush_position`), the `none` and `erase` brushes modify or erase EVERY instance of `object_name` on `layer_name`."
+          },
+          "new_instances_count": {
+            "type": "number",
+            "description": "The number of new instances to create and position using the brush. Usually don't go over 10-20 instances. Make sure to specify the `object_name` for this."
+          },
+          "instances_z_order": {
+            "type": "number",
+            "description": "Optional Z order for the new or modified instances. Unchanged if not set (or set to the highest value of the layer for new instances)."
+          },
+          "instances_size": {
+            "type": "string",
+            "description": "Optional size in pixel for the new or modified instances. Must be width then height, separated by a comma. Example: 100,200. If not specified, default size is used."
+          },
+          "instances_rotation": {
+            "type": "number",
+            "description": "The angle in degrees to set for the new or modified instances. Do not specify this to leave it changed."
+          },
+          "instances_opacity": {
+            "type": "number",
+            "description": "Optional opacity for the new or modified instances - from 0 (fully transparent) to 255 (fully opaque). Do not specify this to leave it unchanged (new instances default to 255, fully opaque)."
+          },
+          "instances_hidden": {
+            "type": "boolean",
+            "description": "Optional. Set to true to make the new or modified instances hidden when the scene starts (they still exist and can be displayed at runtime with the \"Show\" action); set to false to make them visible. Do not specify this to leave it unchanged (new instances default to visible)."
+          },
+          "drop_to_surface": {
+            "type": "object",
+            "description": "Optional, for side view games. Drops each placed instance down (toward +Y) onto the first surface below the brush position, as shown in the scene editor (the collision masks of the objects): its horizontal center is at the brush X and the bottom of its box rests on the surface. The scene (or the custom object variant) is opened in the editor to find the surfaces. Put the brush position above the surface. With the `none` brush, each existing instance is dropped from where it is (only its Y changes). The instances being placed are never a surface. The result tells, for each instance, the object it rests on, or that no surface was found (the instance then stays at the brush position). Omit `brush_position_anchor` with it.",
+            "properties": {
+              "include_objects": {
+                "type": "string",
+                "description": "Optional names of objects or groups, separated by commas: the only ones to land on."
+              },
+              "exclude_objects": {
+                "type": "string",
+                "description": "Optional names of objects or groups, separated by commas, to fall through (example: water, grass, decorations)."
+              }
+            }
+          }
+        },
+        "required": [
+          "scope",
+          "layer_name",
+          "brush_kind"
+        ]
+      }
+    },
+    {
+      "name": "put_3d_instances",
+      "description": "Places new instance(s), or move/erase existing instances, of an existing object onto a specified 3D layer of the given scope (a scene, an external layout or a variant of a custom object) using a virtual brush at given X, Y, Z coordinates. Can also be used to resize, rotate, hide or update existing 3D instance(s). Existing instances identifiers can be found by calling `describe_instances` (`id` field for each instance).\nTo delete instances, use `brush_kind: \"erase\"` with `existing_instance_ids`, or with only `object_name` to erase every instance of it on `layer_name` (no separate remove tool exists). To move existing instances, use the `point` brush with `existing_instance_ids` (the `none` brush never changes position). An instance position, size, rotation and visibility are set here, not via `change_object_property`.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "scope": {
+            "type": "object",
+            "description": "Where the instances are placed. In a custom object variant, the positions are in the local space of the custom object. Set `type` and the name field(s) of that type.",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "scene",
+                  "external_layout",
+                  "custom_object_variant"
+                ],
+                "description": "`scene`: a scene (`scene_name`). `external_layout`: the instances of an external layout (`external_layout_name`), with the objects and layers of its associated scene. `custom_object_variant`: the child objects, instances and layers of a variant of a custom object (`extension_name` + `custom_object_name` + `variant_name`, `\"\"` being the default variant that named variants inherit from)."
+              },
+              "scene_name": {
+                "type": "string",
+                "description": "The name of the scene (type `scene`)."
+              },
+              "external_layout_name": {
+                "type": "string",
+                "description": "The name of the external layout (type `external_layout`)."
+              },
+              "extension_name": {
+                "type": "string",
+                "description": "The name of the extension (extension, custom_behavior, custom_object and custom_object_variant types)."
+              },
+              "custom_object_name": {
+                "type": "string",
+                "description": "The name of the custom object in the extension (custom_object and custom_object_variant types)."
+              },
+              "variant_name": {
+                "type": "string",
+                "description": "The name of the variant of the custom object (type `custom_object_variant`); \"\" is the default variant."
+              }
+            },
+            "required": [
+              "type"
+            ],
+            "propertyOrdering": [
+              "type",
+              "scene_name",
+              "external_layout_name",
+              "extension_name",
+              "custom_object_name",
+              "variant_name"
+            ]
+          },
+          "object_name": {
+            "type": "string",
+            "description": "The name of the object to create (or manipulate) instances of. Always required unless you specify `existing_instance_ids`"
+          },
+          "layer_name": {
+            "type": "string",
+            "description": "The name of the layer to place (or move) the instance on. Use an empty string \"\" for the default base layer. For existing instances (`existing_instance_ids`), they will be moved to this layer."
+          },
+          "brush_kind": {
+            "type": "string",
+            "enum": [
+              "point",
+              "line",
+              "random_in_sphere",
+              "erase",
+              "none"
+            ],
+            "description": "The kind of brush to use. Can be `point` (one instance at the exact position), `line` (multiple instances on a line), `random_in_sphere` (multiple instances randomly scattered in a sphere), `erase` (remove either instances in a sphere around the brush, or the instances given by their identifiers) or `none` (only modifies the existing instances given by `existing_instance_ids`, or without them every instance of `object_name` on `layer_name`, without moving them — never creates instances)."
+          },
+          "brush_position": {
+            "type": "string",
+            "description": "The X,Y,Z coordinates of the center of the brush, in pixels, separated by a comma. Example: 100,200,50. Must be omitted for the `none` brush (which never moves instances — passing a position with it is an error); can be omitted for `erase` when specifying `existing_instance_ids`. If using `line` brush, this is the start position and you must also specify the `brush_end_position`. Note: each instance is placed by its ORIGIN, which is NOT always the corner of its box: a 3D model is positioned by the origin it was authored with, usually near the middle of the model (only a `Cube3DObject` is positioned by its minimum corner). Never compute a position from a size alone: place the instances by their box with `brush_position_anchor`, or read the offsets of the origin in `objectSizeInfo` (in tool results)."
+          },
+          "brush_position_anchor": {
+            "type": "string",
+            "enum": [
+              "origin",
+              "min_corner",
+              "center",
+              "bottom_center"
+            ],
+            "description": "Optional. Which point of the instances the brush positions: `origin` (the default: their x;y;z, wherever the origin of the object is), `min_corner` (the corner of their box with the minimum X, Y and Z), `center` (the middle of their box) or `bottom_center` (the middle on X and Y, the minimum on Z: what rests an object on the ground, or stacks a part on top of another). Use it instead of computing a position from a size: it needs nothing to be known of the origin of the object, and two objects centered on each other take the same position. The box is the unrotated, unflipped one, at the size these instances have. Refused when the size or the origin of the object is unknown."
+          },
+          "brush_size": {
+            "type": "number",
+            "description": "The radius of the brush, for `random_in_sphere` or `erase` brush kind."
+          },
+          "brush_end_position": {
+            "type": "string",
+            "description": "The X,Y,Z coordinates of the end position of the brush, separated by a comma. Only used for `line` brush. Example: 400,650,100."
+          },
+          "existing_instance_ids": {
+            "type": "string",
+            "description": "The optional identifiers of existing instances to modify — get them from `describe_instances` (the `id` field of each instance). They must be instances of `object_name`. These instances are moved by a placement brush (`point`, `line` or `random_in_sphere` — `point` moves EVERY listed instance to exactly `brush_position`, all three axes, so use one call per target position), updated in place without moving (`none`: size, rotation and layer only — never position), or removed (`erase`), separated by a comma (example: `a213v-cdef,b193v-98a1,3334873`). This can be combined with `new_instances_count`. Without `existing_instance_ids` (and without `brush_position`), the `none` and `erase` brushes modify or erase EVERY instance of `object_name` on `layer_name`."
+          },
+          "new_instances_count": {
+            "type": "number",
+            "description": "The number of new instances to create and position using the brush. Make sure to specify the `object_name` for this."
+          },
+          "instances_size": {
+            "type": "string",
+            "description": "Optional size in pixel for the new or modified instances. Must be width then height then depth, separated by a comma. Example: 100,200,150. If not specified, default size is used."
+          },
+          "instances_rotation": {
+            "type": "string",
+            "description": "The angles in degrees to set for the new or modified instances, on the X, Y and Z axes, separated by a comma. All three values are required. For example: 0,20,50. Do not specify this to leave it unchanged."
+          },
+          "instances_hidden": {
+            "type": "boolean",
+            "description": "Optional. Set to true to make the new or modified instances hidden when the scene starts (they still exist and can be displayed at runtime with the \"Show\" action); set to false to make them visible. Do not specify this to leave it unchanged (new instances default to visible). This is the way to make a 3D instance start invisible (3D objects have no opacity)."
+          },
+          "drop_to_surface": {
+            "type": "object",
+            "description": "Optional. Drops each placed instance onto the surface below it, as shown in the scene editor (a 3D terrain, a 3D model, a 3D box...), so that it rests on it: the bottom center of its box (unrotated) is put on the first surface hit. The scene (or the custom object variant) is opened in the editor to find the surfaces. With `up: \"z\"` (the default), `brush_position` (and `brush_end_position`) can be just \"x,y\" to drop from above everything; with \"x,y,z\", only the surfaces below this Z are found. With the `none` brush, each existing instance is dropped from above everything, where it is (only its Z changes, or its Y with `up: \"-y\"`). The instances being placed are never a surface. The result tells, for each instance, the object it rests on, or that no surface was found (the instance then stays at the brush position, with its bottom at Z=0 when the position was just \"x,y\"). Use `brush_position_anchor` only as `bottom_center` (or omit it).",
+            "properties": {
+              "up": {
+                "type": "string",
+                "enum": [
+                  "z",
+                  "-y"
+                ],
+                "description": "The up direction: `z` (the default, most 3D games) or `-y` (side view games: instances fall toward +Y, and the bottom of their box is its maximum Y)."
+              },
+              "include_objects": {
+                "type": "string",
+                "description": "Optional names of objects or groups, separated by commas: the only ones to land on."
+              },
+              "exclude_objects": {
+                "type": "string",
+                "description": "Optional names of objects or groups, separated by commas, to fall through (example: water, grass, decorations)."
+              }
+            }
+          }
+        },
+        "required": [
+          "scope",
+          "layer_name",
+          "brush_kind"
+        ]
+      }
+    },
+    {
+      "name": "read_events_source",
+      "description": "Read events of a scene, of external events, or of a function of an extension, as \"events script\" source: the exact syntax accepted by the `event_script` field used to generate events. Each event is annotated with its id (like `# event-2.1`). Use this BEFORE replacing an event: fetch the event with `event_ids`, edit the returned script, and resend the event in FULL. With `replace_event_but_keep_existing_sub_events`, resend the event WITHOUT its sub-events (they are kept automatically); with `replace_entire_event_and_sub_events`, anything left out of your script is lost. Without any filter, it returns every top-level event with deep sub-events collapsed into `# ...` markers. Filters compose by NARROWING each other (an event must match ALL of them): `event_ids` restricts to these events (returned in full, ancestors shown as header lines for context), `search` and `object_names` select matching events inside that scope. Prefer a single filter; if the result is empty, retry with fewer filters rather than concluding the logic does not exist. A `link \"Name\"` line includes the events of the external events (or of the scene) it names: read them with a `scope` of type `external_events` (or `scene`) and that name. When reading a function (`function_name`), the output also contains a `scopeSummary`: the parameters, the properties, the child objects and the extension variables usable in that function. The output is capped (`max_chars`): anything collapsed or dropped is marked with a `# ...` note telling which `event_ids` to fetch to see it.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "scope": {
+            "type": "object",
+            "description": "Whose events to read: a scene, external events, or the extension, custom behavior or custom object owning the function named by `function_name`. Set `type` and the name field(s) of that type.",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "scene",
+                  "external_events",
+                  "extension",
+                  "custom_behavior",
+                  "custom_object"
+                ],
+                "description": "`scene`: a scene (`scene_name`). `external_events`: external events (`external_events_name`): events not tied to a scene, included in scenes by `link` events. Usually not recommended. `extension`: an extension of the project (`extension_name`): its free functions and extension variables. `custom_behavior`: a custom behavior of an extension (`extension_name` + `custom_behavior_name`). `custom_object`: a custom object of an extension (`extension_name` + `custom_object_name`): its declaration and functions."
+              },
+              "scene_name": {
+                "type": "string",
+                "description": "The name of the scene (type `scene`)."
+              },
+              "external_events_name": {
+                "type": "string",
+                "description": "The name of the external events (type `external_events`)."
+              },
+              "extension_name": {
+                "type": "string",
+                "description": "The name of the extension (extension, custom_behavior, custom_object and custom_object_variant types)."
+              },
+              "custom_behavior_name": {
+                "type": "string",
+                "description": "The name of the custom behavior in the extension (type `custom_behavior`)."
+              },
+              "custom_object_name": {
+                "type": "string",
+                "description": "The name of the custom object in the extension (custom_object and custom_object_variant types)."
+              }
+            },
+            "required": [
+              "type"
+            ],
+            "propertyOrdering": [
+              "type",
+              "scene_name",
+              "external_events_name",
+              "extension_name",
+              "custom_behavior_name",
+              "custom_object_name"
+            ]
+          },
+          "function_name": {
+            "type": "string",
+            "description": "The name of the function whose events should be read. Required with a `scope` of type `extension` (a free function), `custom_behavior` or `custom_object`. Unused with a `scene` or `external_events` scope."
+          },
+          "event_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Event ids (like `event-2` or `event-2.1.0`, as annotated in the source and reported by the explorer agent) or names of group events. These events are returned in full."
+          },
+          "search": {
+            "type": "string",
+            "description": "Case-insensitive text searched in each event's own lines (conditions, actions, local variables - not its sub-events). Matching events are returned in full. In a `js` event larger than `max_chars`, only its matching lines are returned, with the lines around them, in `jsCodeExcerpt`."
+          },
+          "object_names": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Only return events referencing at least one of these objects."
+          },
+          "sub_events_depth": {
+            "type": "integer",
+            "description": "How many levels of sub-events to include for each returned event (default: all levels for a filtered read, 1 for a whole-scene read). Collapsed levels are shown as `# ...` markers."
+          },
+          "max_chars": {
+            "type": "integer",
+            "description": "Maximum size of the returned source (default 12000 characters, maximum 30000, or 1000000 inside `run_script`, where the output stays in the script). When exceeded, sub-events are collapsed first, then trailing events dropped (with a note listing their ids)."
+          },
+          "js_from_line": {
+            "type": "integer",
+            "description": "A `js` event larger than `max_chars` is returned by parts in `jsCodeExcerpt` (numbered lines, with a note giving the next `js_from_line`): the first line of its code to read, or to search with `search` (default 1)."
+          }
+        },
+        "required": [
+          "scope"
+        ]
+      }
+    },
+    {
+      "name": "read_game_project_json",
+      "description": "Read parts of the game project. Use path to navigate, optionally filter arrays, paginate with offset/limit, and pick specific fields. Use [\"key\"] bracket notation for property names containing spaces or special characters (use backslash to escape quotes or backslashes inside: [\"my \\\"key\\\"\"]). The extensions of the project are under `extensions` (`extensions[*].extensionName`, and for each one `customObjects`, `customBehaviors`, `freeFunctions` and `tests`); there is no `[name=...]` path syntax, so pick one extension with `filter: { property: 'extensionName', value: 'MyExt' }`.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Path into the project. Use dots for simple keys, [0] for array index, [*] for all array items, [\"key\"] for keys with special characters. Examples: `scenes`, `scenes[0]`, `scenes[*].sceneName`, `scenes[0].layers[*].layerName`, `scenes[0].objectGroups[*].objectGroupName`, `scenes[0].objects[*].objectName`, `scenes[0].objects[*].objectType`, `scenes[0].objects[*].behaviors[*].behaviorName`, `scenes[0].objects[*].objectVariables[*].variableName`, `scenes[0].sceneVariables[*].variableName`, `externalLayouts[*].externalLayoutName`, `globalVariables[*].variableName`, `extensions`, `extensions[*].extensionName`, `extensions[0].customObjects[*].objectName`, `extensions[0].customBehaviors[*].behaviorName`, `extensions[0].freeFunctions[*].functionName`, `extensions[0].tests[*].testName`"
+          },
+          "filter": {
+            "type": "object",
+            "description": "Optional. Keep only the items of the last array in the path whose `property` matches: `value` (strict equality), or `contains` / `startsWith` (case-insensitive) to search by name.",
+            "properties": {
+              "property": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              },
+              "contains": {
+                "type": "string"
+              },
+              "startsWith": {
+                "type": "string"
+              }
+            }
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Optional. Skip this many items of the resulting array (for pagination, following \"... and N more items\" markers)."
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Optional. Return at most this many items of the resulting array."
+          },
+          "countOnly": {
+            "type": "boolean",
+            "description": "Optional. Return only {count} of the resulting array - cheap existence/size checks."
+          },
+          "maxDepth": {
+            "type": "integer",
+            "description": "Max depth of nested objects to return. Default 2. Use 0 for structure overview, higher for full details."
+          },
+          "maxStringLength": {
+            "type": "integer",
+            "description": "Max length of string values before truncation. Default 200. Set higher to read full long strings if needed."
+          }
+        },
+        "required": [
+          "path"
+        ]
+      }
+    },
+    {
+      "name": "change_gameplay_tests",
+      "description": "Delete gameplay tests, or change their properties: `name` (rename), `description`, `index` (0-based position in the tests list). The source can NOT be changed here: test code must go through the gameplay test runner so it is executed and verified. Returns the ordered tests of the scope after the changes (capped at 50).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "scope": {
+            "type": "object",
+            "description": "The tests container the tests belong to: the project itself, or one of its events-based extensions.",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "project",
+                  "extension"
+                ]
+              },
+              "extension_name": {
+                "type": "string",
+                "description": "The name of the events-based extension (required when `type` is 'extension')."
+              }
+            },
+            "required": [
+              "type"
+            ],
+            "propertyOrdering": [
+              "type",
+              "extension_name"
+            ]
+          },
+          "changes": {
+            "type": "array",
+            "description": "The changes to apply, one entry per test.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "test_name": {
+                  "type": "string",
+                  "description": "The exact name of an existing test in the scope."
+                },
+                "delete_this_test": {
+                  "type": "boolean",
+                  "description": "If true, the test is deleted (`changed_properties` is then ignored)."
+                },
+                "changed_properties": {
+                  "type": "array",
+                  "description": "A list of test properties to change.",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "property_name": {
+                        "type": "string",
+                        "description": "'name' (rename — fails if the new name is taken), 'description', or 'index' (new 0-based position, clamped)."
+                      },
+                      "new_value": {
+                        "type": "string",
+                        "description": "The new value, always as a string (e.g. '0' for an index)."
+                      }
+                    },
+                    "required": [
+                      "property_name",
+                      "new_value"
+                    ],
+                    "propertyOrdering": [
+                      "property_name",
+                      "new_value"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "test_name"
+              ],
+              "propertyOrdering": [
+                "test_name",
+                "delete_this_test",
+                "changed_properties"
+              ]
+            }
+          }
+        },
+        "required": [
+          "scope",
+          "changes"
+        ],
+        "propertyOrdering": [
+          "scope",
+          "changes"
+        ]
+      }
+    },
+    {
+      "name": "inspect_extension",
+      "description": "Read the declarations of an extension of the project, drilling down level by level (the events are NOT returned: read them with `read_events_source`).\nWith `extension_name` alone: the settings of the extension, its variables, dependencies, gameplay tests and the one-line signatures of its custom objects, custom behaviors and free functions.\nAdd `custom_object_name` or `custom_behavior_name` (never both): its settings, its properties (and shared properties for a behavior) and the full signatures of its functions.\nAdd `function_name`: that one function in full - type, parameters (including the implicit `Object` and `Behavior` ones) and how to call it from \"events script\" (`Ext::Fn(...)` for a free function, `Object.Ext::Fn(...)` for an object function, `Object.Behavior::Fn(...)` for a behavior function, plus the expression form when it is one). Lifecycle functions have no call form: they are called by the engine.\nAdd `variant_name` (with `custom_object_name`): the area, layers, child objects with their configuration, object groups and instances of that variant.\nPrivate functions and properties are always included (you are authoring the extension). An extension installed from the extension store is returned with `isReadOnly: true`: it can be read and called, never modified.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "extension_name": {
+            "type": "string",
+            "description": "The name of the extension of the project to read (as listed in `extensions` of the game project)."
+          },
+          "custom_object_name": {
+            "type": "string",
+            "description": "Optional. The name of a custom object of the extension to read. Cannot be set together with `custom_behavior_name`."
+          },
+          "custom_behavior_name": {
+            "type": "string",
+            "description": "Optional. The name of a custom behavior of the extension to read. Cannot be set together with `custom_object_name`."
+          },
+          "function_name": {
+            "type": "string",
+            "description": "Optional. The name of a function to read in full: a free function of the extension, or a function of the custom object or custom behavior given above."
+          },
+          "variant_name": {
+            "type": "string",
+            "description": "Optional. The name of a variant of the custom object to read (\"\" is the default variant). Requires `custom_object_name`."
+          }
+        },
+        "required": [
+          "extension_name"
+        ],
+        "propertyOrdering": [
+          "extension_name",
+          "custom_object_name",
+          "custom_behavior_name",
+          "function_name",
+          "variant_name"
+        ]
+      }
+    },
+    {
+      "name": "run_gameplay_test",
+      "description": "Run one gameplay test in a real game preview (the editor exports the project, boots the preview and executes the test against the gameplay test harness). Returns the result object: status (`passed`/`failed`/`error`/`stopped`/`timeout`), framesExecuted, durationMs, assertions, errors, consoleLogs, eventLog, finalState and optional screenshots. When `source` is provided, the test is created/updated (persisted into the project or extension when `persist` is true, the default) and then run. Without `source`, the existing test with `test_name` is run as stored.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "scope": {
+            "type": "object",
+            "description": "The tests container the test belongs to: the project itself, or one of its events-based extensions.",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "project",
+                  "extension"
+                ]
+              },
+              "extension_name": {
+                "type": "string",
+                "description": "The name of the events-based extension (required when `type` is 'extension')."
+              }
+            },
+            "required": [
+              "type"
+            ],
+            "propertyOrdering": [
+              "type",
+              "extension_name"
+            ]
+          },
+          "test_name": {
+            "type": "string",
+            "description": "The name of the test to run (unique in its scope)."
+          },
+          "source": {
+            "type": "string",
+            "description": "The JavaScript body executed as `async (harness) => { ... }` — the BODY only, never the wrapper function itself. OMIT this to run the stored test code as-is (the normal way to run an existing test). When provided, the test is created/updated with this source — OVERWRITING the stored code when `persist` is true — then run: only do this to author a new test or to fix a test whose previous run could not execute."
+          },
+          "description": {
+            "type": "string",
+            "description": "Short description of what the test verifies (stored with the test when it is created/updated)."
+          },
+          "persist": {
+            "type": "boolean",
+            "description": "Whether the created/updated test is saved into the project/extension (default true)."
+          },
+          "timeout_ms": {
+            "type": "number",
+            "description": "Wall-clock timeout for the run, in milliseconds (default 30000, maximum 120000)."
+          }
+        },
+        "required": [
+          "scope",
+          "test_name"
+        ]
+      }
+    },
+    {
+      "name": "generate_events",
+      "description": "Adds new events (conditions and actions), or rework one or more events of the event sheet of a scene, of external events or of a function of an extension, based on \"EventScript\". This will translate \"EventScript\" into functional event(s), either new events or replacing existing ones. Get the event ID or group names from the explorer agent first to know where to place the events. If the \"EventScript\" does not compile, its errors are returned to you and NOTHING is applied: fix the script and call again (a one-line fix, usually). If the corrected script still does not compile, a slower sub-agent takes over and fixes it, then reports what it applied along with the errors of your script. This sub-agent does have not have full context of the game, so you must be precise: include object names, list the extensions that will be used in `extension_names_list`, include precise variable names. Do not invent name of conditions or actions or parameters. For sounds/musics to play, you can first ask the explorer agent to search the resource store for existing audio files, then reference the exact name of the chosen file. To change a part of an existing event (some lines of a `js` event, an action of a long event), use `edits` rather than resending the whole event.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "scope": {
+            "type": "object",
+            "description": "Where the events are added or edited: a scene, external events (written with the objects and variables of their associated scene, or else of a scene linking to them), or the extension, custom behavior or custom object owning the function named by `function_name`. Set `type` and the name field(s) of that type.",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "scene",
+                  "external_events",
+                  "extension",
+                  "custom_behavior",
+                  "custom_object"
+                ],
+                "description": "`scene`: a scene (`scene_name`). `external_events`: external events (`external_events_name`): events not tied to a scene, included in scenes by `link` events. Usually not recommended. `extension`: an extension of the project (`extension_name`): its free functions and extension variables. `custom_behavior`: a custom behavior of an extension (`extension_name` + `custom_behavior_name`). `custom_object`: a custom object of an extension (`extension_name` + `custom_object_name`): its declaration and functions."
+              },
+              "scene_name": {
+                "type": "string",
+                "description": "The name of the scene (type `scene`)."
+              },
+              "external_events_name": {
+                "type": "string",
+                "description": "The name of the external events (type `external_events`)."
+              },
+              "extension_name": {
+                "type": "string",
+                "description": "The name of the extension (extension, custom_behavior, custom_object and custom_object_variant types)."
+              },
+              "custom_behavior_name": {
+                "type": "string",
+                "description": "The name of the custom behavior in the extension (type `custom_behavior`)."
+              },
+              "custom_object_name": {
+                "type": "string",
+                "description": "The name of the custom object in the extension (custom_object and custom_object_variant types)."
+              }
+            },
+            "required": [
+              "type"
+            ],
+            "propertyOrdering": [
+              "type",
+              "scene_name",
+              "external_events_name",
+              "extension_name",
+              "custom_behavior_name",
+              "custom_object_name"
+            ]
+          },
+          "function_name": {
+            "type": "string",
+            "description": "The name of the function whose events should be added or edited. Required with a `scope` of type `extension` (a free function), `custom_behavior` or `custom_object`. Unused with a `scene` or `external_events` scope."
+          },
+          "event_batches": {
+            "type": "array",
+            "description": "One entry per logical group of events to emit. Each entry has its own placement. Use multiple entries when a single request needs events placed in different locations (e.g., replacing one event AND adding new ones elsewhere). No more than 6 entries.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "event_script": {
+                  "type": "string",
+                  "description": "The events written in the \"events script\" syntax (see the documentation in your instructions). When valid, the events are created instantly, without any agent working on them - so prefer it whenever you know the exact conditions/actions to use. If it does not compile, the errors are returned to you (nothing applied): fix and call again. Only a second failing attempt is handed to the (slower) agent."
+                },
+                "events_description": {
+                  "type": "string",
+                  "description": "A pseudo-code of the desired events logic, for the rare case where \"events script\" would not work. This is read by the agent and can also be used to indicate event(s) to remove or rework. Not needed if `event_script` is given. Avoid using it."
+                },
+                "placement_relation": {
+                  "type": "string",
+                  "enum": [
+                    "insert_after_sibling",
+                    "insert_before_sibling",
+                    "replace_event_but_keep_existing_sub_events",
+                    "replace_entire_event_and_sub_events",
+                    "append_subevents_to",
+                    "append_to_end",
+                    "delete"
+                  ],
+                  "description": "Structural tree operation. Sub-events relations nest under the target — new events inherit its conditions and object picking. Sibling relations place next to the target with the same parent — new events inherit only the parent's conditions, NOT the target's. To rework an existing event, prefer `replace_event_but_keep_existing_sub_events`: it replaces the event (conditions, actions, local variables) and re-attaches its existing sub-events, unmodified, to the first new event — so do NOT include the sub-events in your script (they would be duplicated). Use `replace_entire_event_and_sub_events` only to rework an event AND all its sub-events: everything not in your script is deleted, so your script must contain the full subtree you want to keep (read it first with `read_events_source`). Use `append_to_end` to add the events at the end of the events of the scope (the scene, the external events or the function)."
+                },
+                "expected_event_source": {
+                  "type": "string",
+                  "description": "REQUIRED with the replace relations and an `event_script` (not with `edits`): the CURRENT source of what you are replacing, as returned by `read_events_source`. With `replace_event_but_keep_existing_sub_events`: the event itself, WITHOUT its sub-events. With `replace_entire_event_and_sub_events`: the event WITH all its sub-events. Whitespace, line breaks, casing, `#` comments and `pass` lines are ignored. Proves what you replace was read and has not changed: the call is REJECTED (nothing applied) on mismatch, with the current source in the answer."
+                },
+                "placement_target_event_id": {
+                  "type": "string",
+                  "description": "Reference event ID or group name. Required for all relations except append_to_end. Meaning depends on relation: parent for append_subevents_to; sibling anchor for insert_*_sibling; event being replaced for the replace relations or delete. If unsure, call `read_events_source` to get the event ID."
+                },
+                "placement_expected_parent_event_id": {
+                  "type": "string",
+                  "description": "Safety check: The ID of the event (or group name) that must end up as the direct parent of the inserted events after placement. Use empty string for top-level scene events. If unsure, don't specify this field."
+                },
+                "placement_rationale": {
+                  "type": "string",
+                  "description": "One sentence explaining why this placement is correct with respect to inherited parent conditions and object picking. Example: \"Sibling of event-2.5 (not 2.5.1) because these events check State='XXX' and must not inherit event-2.5's State='YYY' condition.\""
+                },
+                "edits": {
+                  "type": "array",
+                  "description": "Instead of `event_script`, with a replace relation: exact text replacements in the CURRENT source of the event, as `read_events_source` returns it - the code of a `js` event (also given as numbered lines in `jsCodeExcerpt`: never copy the numbers), the \"events script\" of any other event (without its sub-events with `replace_event_but_keep_existing_sub_events`, with them with `replace_entire_event_and_sub_events`). Applied in order; if one fails, nothing is changed. The code of a `js` event is changed directly, whatever its size: give the `edits` of `js` events in a call of their own. The answer says how many occurrences each edit replaced, at which lines, and gives the numbered lines around the changes (`editedEventSnippets`).",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "old_string": {
+                        "type": "string",
+                        "description": "The exact text to replace. It must be found once: include lines around it to make it unique (or set `replace_all`)."
+                      },
+                      "new_string": {
+                        "type": "string",
+                        "description": "The text replacing `old_string`."
+                      },
+                      "replace_all": {
+                        "type": "boolean",
+                        "description": "Replace every occurrence of `old_string` (default false)."
+                      }
+                    },
+                    "required": [
+                      "old_string",
+                      "new_string"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "placement_relation",
+                "placement_rationale"
+              ]
+            }
+          },
+          "extension_names_list": {
+            "type": "string",
+            "description": "A comma-separated list of the exact type of extensions (including built-in ones), behaviors, and/or objects that will be used in the event (e.g: `Sprite, PhysicsCharacter3D, PhysicsCharacter3D::PhysicsCharacter3D, ParticleSystem::ParticleEmitter, BuiltinMouse` - can be arbitrarily long to list everything needed)."
+          },
+          "objects_list": {
+            "type": "string",
+            "description": "A comma-separated list of the exact name of objects (scene, global objects...) or groups that will be used in the events (probably those mentioned in the events description, but there can be more if you think they are useful). Example: `Player, Obstacle, Enemy1, RedCoin, GreenCoin, Super_Enemy`. These objects (or groups) must all already be part of the game (if not, please use the \"edit\" agent first to build these objects, add behaviors, etc...)."
+          },
+          "estimated_complexity": {
+            "type": "number",
+            "description": "Estimated complexity of the requested events generation, from 0 to 100. Example: editing a parameter value in an event with 3 actions: 6, 1 new condition and 1 new action or less: 12, 2 events max with 6 actions/conditions: 22, more events or loops: 40, large algorithm or many concerns in the request: 82, very large algorithm or many tasks, would need splitting work: 93. Will be used for estimating the work effort."
+          }
+        },
+        "required": [
+          "scope",
+          "event_batches",
+          "extension_names_list",
+          "objects_list",
+          "estimated_complexity"
+        ]
+      }
+    },
+    {
+      "name": "run_script",
+      "description": "Run a JavaScript script calling the editor functions described in the system prompt (and only them — no other API is available). The script is executed in the GDevelop editor, against the currently opened project. Use `await` for every function call — calls run sequentially, in order. Execution STOPS at the first function call returning `success: false` or at the first thrown error: everything executed before is applied (there is no rollback), and you receive the outputs of all the calls made so far, the failure details (function name, arguments, error and line number), plus everything logged with `console.log`. Inspect function results in the script (e.g. `const result = await inspect_variables({...}); console.log(result.variables);`) and log what you need to see. Prefer one script doing several steps over many single-call scripts, but stay reasonable: if a later step depends on information you cannot check in the script, stop the script there and read the outputs first.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "A 4-10 word summary of what this script does, shown to the user while it runs (write it in their language). Start with a verb."
+          },
+          "js_code": {
+            "type": "string",
+            "description": "The JavaScript code to run. Top-level `await` is allowed (the script body is treated as an async function). Call only the editor functions from the API definition and standard JavaScript (no DOM, no fetch, no imports). A `return` value, if any, is reported back to you along with the console logs and each function call output."
+          }
+        },
+        "required": [
+          "title",
+          "js_code"
+        ]
+      }
+    }
+  ],
+  "lookupFunctions": [
+    {
+      "name": "read_full_docs",
+      "description": "Reads and returns the full reference documentation for one or more GDevelop extensions.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "extension_names": {
+            "type": "string",
+            "description": "Comma-separated list of extension names to read (e.g.: `Sprite, Physics3D`...). All extension names are case-sensitive."
+          }
+        },
+        "required": [
+          "extension_names"
+        ]
+      }
+    },
+    {
+      "name": "read_javascript_reference",
+      "description": "Reads pages of the reference of the GDevelop JavaScript game engine (GDJS): the classes, methods and functions the code of a `js` event can call. Only for writing JavaScript: the actions, conditions a",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "names": {
+            "type": "string",
+            "description": "Comma-separated, up to 5 names. Either object or behavior types of the project (`Sprite`, `TextObject::Text`, `PlatformBehavior::PlatformerObjectBehavior`): the page of the class of their instances (what `objects[i]` is in a `js(Name)` event, what `object.getBehavior(name)` returns). Or `gdjs` class or namespace names (`gdjs.RuntimeScene`, `gdjs.RuntimeObject`, `gdjs.Variable`, `gdjs.evtTools.sound`): that page. `gdjs` alone lists every class and namespace of the engine. A page has the members declared by that class only: read the parent class it names for the inherited ones. A name that matches nothing gets the closest class, namespace or member names in return (a method name like `simulateJumpKey` finds its class)."
+          }
+        },
+        "required": [
+          "names"
+        ]
+      }
+    },
+    {
+      "name": "search_docs",
+      "description": "Search the GDevelop wiki for guidance on editor workflows, feature/extensions how-to pages... For description, objects, behaviors, effects, actions/conditions/expressions of an extension, use `read_fu",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Natural-language description of the use case or topic. 4-10 words is usually best; longer is fine if it disambiguates (e.g. \"publish to iOS via cloud build, signing requirements\"). Examples: \"save the player progress between sessions\", \"publish to iOS\", \"multiplayer setup lobby\", \"add background music that loops\"..."
+          }
+        },
+        "required": [
+          "query"
+        ]
+      }
+    },
+    {
+      "name": "search_object_asset_store",
+      "description": "Search in the GDevelop Asset Store for objects, or effects for a 3D layer (skyboxes, fog presets), matching the given search terms. Returns up to 5 candidate assets (not reranked). Only searches: it d",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "search_terms": {
+            "type": "string",
+            "description": "A list of search terms or tags that will be used to find assets in the GDevelop Asset Store. Must be single words separated by a comma, the most generic word must be first. For example: `spaceship, red, insurgent, cannon`."
+          },
+          "allowed_object_types": {
+            "type": "array",
+            "description": "Optional. A list of object types to restrict the search to (e.g. `[\"Sprite\", \"TiledSpriteObject::TiledSprite\"]`). Effects for a 3D layer are found with their effect type: `[\"Scene3D::Skybox\"]` for skyboxes, `[\"Scene3D::ExponentialFog\"]` for fog presets (they are not objects). If not provided, all object types are considered.",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "search_terms"
+        ]
+      }
+    },
+    {
+      "name": "search_resource_store",
+      "description": "Search in the GDevelop Resource Store for free audio files (sounds or musics) or fonts matching the given search terms. Returns up to 10 candidate resources with their name, tags and metadata (for aud",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "search_terms": {
+            "type": "string",
+            "description": "A list of search terms or tags that will be used to find resources in the GDevelop Resource Store. Must be single words separated by a comma, the most generic word must be first. For example: `explosion, retro`, `music, calm, piano` or `pixel, bold`."
+          },
+          "resource_kind": {
+            "type": "string",
+            "enum": [
+              "audio",
+              "font"
+            ],
+            "description": "The kind of resources to search for: `audio` for sounds and musics, `font` for fonts. Only these two kinds can be searched."
+          }
+        },
+        "required": [
+          "search_terms",
+          "resource_kind"
+        ]
+      }
+    }
+  ]
+}

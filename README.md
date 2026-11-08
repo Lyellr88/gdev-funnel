@@ -130,6 +130,23 @@ The funnel answers the MCP handshake itself instead of waiting for the editor, s
 
 - stdout carries JSON-RPC only. Logs are on stderr, prefixed `[funnel]` and `[gdevelop]`.
 - A gameplay test can run for minutes. The funnel and the editor both wait without a timeout on tool calls; only the handshake (15s) and the tool list (20s) have one.
-- Environment overrides: `GDEVELOP_FUNNEL_URL`, `GDEVELOP_MCP_TOKEN`, `GDEVELOP_LIVE_SETTINGS`, `GDEVELOP_MCP_CMD`, `GDEVELOP_FUNNEL_CACHE`, `GDEVELOP_FUNNEL_CONFIG`.
+- Environment overrides: `GDEVELOP_FUNNEL_URL`, `GDEVELOP_MCP_TOKEN`, `GDEVELOP_LIVE_SETTINGS`, `GDEVELOP_MCP_CMD`, `GDEVELOP_FUNNEL_CACHE`, `GDEVELOP_FUNNEL_CONFIG`. The environment wins over `funnel.config.json`.
+- `funnel.config.local.json`, next to `funnel.config.json`, is merged over it key by key and is git-ignored: that is where a token or a machine-specific path belongs. A custom `GDEVELOP_FUNNEL_CONFIG` gets the same `.local.json` sibling.
 - Nothing in the GDevelop source tree is modified. This folder can be zipped and sent to someone else; they only need their own editor, and their token is found on their machine.
 - If GDevelop changes its tool names, the signature list follows automatically because it is built from whatever the upstream server publishes.
+
+## Tests
+
+`node test-funnel.js` runs three suites — the stdio upstream, the live-editor HTTP contract, and the offline path — against a fake upstream, so it needs no GDevelop install. The schemas it measures against come from `fixtures/public-api-v22/`: a trimmed copy of `newIDE/app/src/EditorFunctions/PublicApi/v22` (13 of the 32 functions, all 5 lookup tools, and an excerpt of `script-api.d.ts`).
+
+To measure the real files instead, point it at a checkout:
+
+```sh
+GDEVELOP_SOURCE_DIR=/path/to/GDevelop-master node test-funnel.js
+```
+
+GitHub Actions runs the suite on Linux and Windows, on Node 20 and 22 (`.github/workflows/test.yml`).
+
+## License
+
+MIT, see `LICENSE`.

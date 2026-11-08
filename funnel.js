@@ -33,8 +33,11 @@
  *   { "url": "http://127.0.0.1:52520/mcp" }                       // http
  *   { "command": ["C:/GDevelop/GDevelop.exe", "--mcp", "a.json"] } // stdio
  *
- * The same can be set with GDEVELOP_FUNNEL_URL / GDEVELOP_MCP_TOKEN /
- * GDEVELOP_MCP_CMD / GDEVELOP_FUNNEL_CACHE.
+ * `funnel.config.local.json` next to it is merged over it, key by key. It is
+ * git-ignored, so it is the place for a token or a machine-specific path.
+ *
+ * The environment wins over both: GDEVELOP_FUNNEL_URL / GDEVELOP_MCP_TOKEN /
+ * GDEVELOP_MCP_CMD / GDEVELOP_FUNNEL_CACHE / GDEVELOP_FUNNEL_CONFIG.
  *
  * Only JSON-RPC goes to stdout; logs go to stderr.
  */
@@ -152,11 +155,24 @@ const findLiveSettings = (configured) => {
   return null;
 };
 
+// `funnel.config.json` holds the shared settings; `funnel.config.local.json`
+// next to it is merged over it key by key. A custom GDEVELOP_FUNNEL_CONFIG
+// gets the same `.local.json` sibling.
+const loadFileConfig = (configPath) => {
+  const shared = readJsonFile(configPath) || {};
+  const localPath = configPath.replace(/\.json$/i, '.local.json');
+  if (localPath === configPath) return shared;
+  const local = readJsonFile(localPath);
+  if (!local) return shared;
+  log(`local config: ${localPath}`);
+  return { ...shared, ...local };
+};
+
 const loadConfig = () => {
   const configPath =
     process.env.GDEVELOP_FUNNEL_CONFIG ||
     path.join(__dirname, 'funnel.config.json');
-  const fileConfig = readJsonFile(configPath) || {};
+  const fileConfig = loadFileConfig(configPath);
 
   let command = process.env.GDEVELOP_MCP_CMD || fileConfig.command;
   if (typeof command === 'string' && command.trim().startsWith('[')) {
@@ -195,7 +211,7 @@ const loadConfig = () => {
     if (settings) log(`token read from ${settings.file}`);
   } else {
     warnings.push(
-      'No GDevelop MCP token found. Open GDevelop, enable the MCP server in its preferences, then run `node funnel.js --check` (or set "token" in funnel.config.json).'
+      'No GDevelop MCP token found. Open GDevelop, enable the MCP server in its preferences, then run `node funnel.js --check` (or set "token" in funnel.config.local.json).'
     );
   }
   if (settings && settings.enabled === false) {
