@@ -1,5 +1,5 @@
 {
   "//": "The live GDevelop editor server. Open GDevelop with the project, enable the MCP server in its preferences, and the funnel finds the port and the token by itself in GDevelop's mcp-live-server.json.",
-  "//2": "To use the '--mcp' upstream instead, replace this file with: { \"command\": [\"C:/Program Files/GDevelop/GDevelop.exe\", \"--mcp\", \"C:/tools/games/game-jam-01/game-jam-01.json\"] }",
+  "//2": "To use the '--mcp' upstream instead, replace this file with: { \"command\": [\"C:/Program Files/GDevelop/GDevelop.exe\", \"--mcp\", \"C:/path/to/your-game/your-game.json\"] }",
   "//3": "Set url and token here only to override the ones read from GDevelop. Check the connection with: node funnel.js --check"
 }

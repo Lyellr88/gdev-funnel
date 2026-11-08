@@ -32,7 +32,7 @@ Cuts each GDevelop MCP request from about 42k tokens to about 2.7k. Full details
 
 - In a terminal, in this folder, run `node funnel.js --check`. It should print the url and token found, then "reachable". "Connection refused" means GDevelop is not open or the MCP server is off in Preferences.
 - In Claude Code, type `/mcp`. `gdevelop-funnel` should show as connected.
-- Ask Claude to describe the cabin. If it answers with a position and size, you are done.
+- Ask Claude what is on the scene. If it lists objects and positions, you are done.
 
 ## If something fails
 
