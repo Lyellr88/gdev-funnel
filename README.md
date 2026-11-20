@@ -4,6 +4,8 @@ A small stdio proxy that sits in front of the GDevelop MCP server and exposes 4 
 
 The GDevelop server publishes one JSON Schema per editor function. That is what the model is charged for on every single API request, whether it uses those tools or not. This proxy replaces the 40 schemas with one `gdevelop(function_name, arguments)` tool whose description is a compact signature list, and forwards each call to the real tool on the upstream server. Arguments are still validated by GDevelop, and the full JSON Schema of any function is one `docs` call away.
 
+This is an independent tool and is not made by or affiliated with GDevelop. It is free and MIT licensed.
+
 ## Measured difference
 
 | | GDevelop alone | Through the funnel |
@@ -146,6 +148,10 @@ GDEVELOP_SOURCE_DIR=/path/to/GDevelop-master node test-funnel.js
 ```
 
 GitHub Actions runs the suite on Linux and Windows, on Node 20 and 22 (`.github/workflows/test.yml`).
+
+## Contributing
+
+Bug reports and pull requests are welcome. See `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md` and `SECURITY.md`. Changes are listed in `CHANGELOG.md`.
 
 ## License
 
